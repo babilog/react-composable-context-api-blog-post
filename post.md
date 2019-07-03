@@ -2,28 +2,30 @@
 
 React's ContextAPI is a great light-weight alternative to using Redux for global state management.
 
-Its important to understand that not every component will require the use of React's ContextAPI, or any global state management tool in general for the most part. Ideally, components should exist in a "functional" state-less fashion, for instance, not carrying any state, and instead, leveraging real-time values passed in through props.
+Its important to understand that not every component will require the use of React's ContextAPI, or any global state management tool in general for the most part. Ideally, components should exist in a "functional" state-less fashion for as long as possible, for instance, not carrying any state, and instead, leveraging real-time values passed in through props.
 
 For example:
-```
+```javascript
     const UserNameDisplay = (props) => (<span>props.userName<span/>);
 ```
 This state-less design enables for easier testing, and forces the logic and state to be kept in the component's parent. Essentially, keeping state centralized to prevent off-sync state within the app.
 
-If we take for example a TODO app, more than likely we know we may need to keep a reference to the TODO items on the application at any one given time. This is because it enables the children from the main top-level component, say for example, the Todo component, from having to drill down the state of the `todos` down to each child component, and then each child that would require the `todos` would then in part need to drill down `todos` further down the chain.
+However, in our case, we do want to have an encompassing component that we could leverage to provide us with a state, and a way to alter that state across any component that requires it.
+
+If we take for example a TODO app, more than likely we know we may need to keep a reference to the TODO items on the application at any one given time. This enables the children from the main top-level component, say for example, the Todo component, from having to drill down the state of the `todos` down to each child component, and then each child that would require the `todos` would then in part need to drill down `todos` further down the chain.
 
 For example (Not the right way of doing things):
-```
+```javascript
     const SomeOtherChildComponent = ({todos}) => {
     		return (
-    				<AnotherChildComponent todos={todos}/> // you get the idea by now ...
+    			<AnotherChildComponent todos={todos}/> // you get the idea by now ...
     		)
     }
 
     const TodosMainComponent = () => {
     	const todos = [];
     	return (
-    			<SomeOtherChildComponent todos={todos}/>
+    		<SomeOtherChildComponent todos={todos}/>
     	)
 
 
@@ -34,7 +36,7 @@ This is quite cumbersome. Prop drilling is perfectly fine if we are dealing with
 The idea is that we have a Provider component that sets up our state, and as many Consumer components to, well, consume that state.
 
 Here's the gist:
-```
+```javascript
     <SomeContext.Provider value={someState}>
 
     	<SomeComponent/>
@@ -48,7 +50,7 @@ We can leverage the concept of React's Hooks to create a custom component that i
 ## Setting up Reducer and Initial State:
 
 Let's start by first defining our reducer structure:
-```
+```javascript
     import { HYDRATE_TODOS } from "./actionTypes";
 
     export const initialState = {
@@ -69,19 +71,19 @@ Let's start by first defining our reducer structure:
 ## Wiring up our Composed Provider Component:
 
 We could have just defined the `todos` using the `useState` hook, since we are just dealing with an array of objects (single value), however, for the purposes of scaling this to also add in additional properties/actions to the state (Add, Remove, Update etc), we'll just start with a reducer.
-```
+```javascript
     import React, { createContext, useReducer } from "react";
     import reducer, { initialState } from "./reducer"; // our reducer from above
 ```
 The first thing we'd have to do is ensure that we are creating a React context
-```
+```javascript
     import React, { createContext, useReducer } from "react";
     import reducer, { initialState } from "./reducer"; // our reducer from above
 
     export const TodosContext = createContext(); // our context for todos
 ```
 Now, we can create a component that would accept other components as a "props" passed in. We can think of this component as the "Parent" component that will initialize our context and pass the context down to the children (the components passed in).
-```
+```javascript
     import React, { createContext, useReducer } from "react";
     import reducer, { initialState } from "./reducer"; // our reducer from above
 
@@ -97,7 +99,7 @@ Now, we can create a component that would accept other components as a "props" p
     };
 ```
 Oh hey, look at that, we've essentially created a reusable component we can bring in to initialize our todo's context and pass in as many children as we'd like. This works in a similar fashion to that of React's Router. Where you have the main router component and the child routes nested underneath:
-```
+```javascript
     <Router>
     	<Route/>
     	<Route/>
@@ -110,18 +112,18 @@ That's essentially all we need in terms of context scaffolding setup. Let's use 
 ## Using the TODO Provider Component:
 
 In our example case from above, we'll refactor the `TodosMainComponent` and its `ChildComponent` to display the list of TODOs using our new `TodoContext`:
-```
+```javascript
     import React, { useContext, useEffect, Fragment } from 'react';
     import { TodoProvider, TodoContext } from './todos/contexts/TodoContext' // import our context provider
     import { HYDRATE_TODOS } from "./actionTypes";
 
     const TodoApp = () => {
     	return(
-    			<Fragment>
-    				<TodoProvider> //remember, we've already setup this provider with the value and initial state
-    					<TodosMainComponent/>
-    				</TodoProvider>
-    			</Fragment>
+            <Fragment>
+                <TodoProvider> //remember, we've already setup this provider with the value and initial state
+                    <TodosMainComponent/>
+                </TodoProvider>
+            </Fragment>
     	)
     }
 
@@ -142,11 +144,11 @@ In our example case from above, we'll refactor the `TodosMainComponent` and its 
     	const [{ todos }, todosDispatch] = useContext(TodoContext);
 
     	useEffect(()=> {
-    			todoDispatch({type: HYDRATE_TODOS, payload: someTodoList});
+    		todoDispatch({type: HYDRATE_TODOS, payload: someTodoList});
     	}, []);
 
     	return (
-    				<SomeOtherChildComponent/>
+    		<SomeOtherChildComponent/>
     	)
     }
 ```
@@ -154,7 +156,7 @@ In our example case from above, we'll refactor the `TodosMainComponent` and its 
 ## Conclusion
 
 Obviously, this is a very simple example of the concepts, however, in real practice, it may be more suitable to wrap a set of routes in a particular context. For instance, you could do something like this:
-```
+```javascript
     <TodoProvider>
             <Route path="/" exact component={TodoMainComponent} />
             <Route path="/todos/add" exact component={Add} />
